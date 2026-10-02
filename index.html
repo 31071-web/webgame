@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chicken Road - Atravessando a Rua</title>
+  <!-- Google Fonts: Fontes modernas e divertidas para estilo arcade -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;600;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <!-- Container Principal do Jogo -->
+  <div id="game-wrapper">
+
+    <!-- CABEÇALHO / HUD (DURANTE A PARTIDA) -->
+    <header id="game-hud" class="hud-container hidden">
+      <div class="hud-item hud-lives" title="Vidas Restantes">
+        <span class="hud-icon">❤️</span>
+        <div id="lives-display" class="hud-value">3</div>
+      </div>
+
+      <div class="hud-item hud-coins" title="Moedas Coletadas">
+        <span class="hud-icon">🪙</span>
+        <div id="coins-display" class="hud-value">0</div>
+      </div>
+
+      <div class="hud-item hud-level" title="Fase Atual">
+        <span class="hud-icon">🏆</span>
+        <div id="level-display" class="hud-value">Fase 1</div>
+      </div>
+
+      <div class="hud-item hud-time" title="Tempo da Fase">
+        <span class="hud-icon">⏱️</span>
+        <div id="time-display" class="hud-value">00:00</div>
+      </div>
+
+      <button id="btn-pause" class="hud-btn" title="Pausar Jogo (ESC)">⏸️</button>
+    </header>
+
+    <!-- BARRA DE PROGRESSO VERTICAL DA FASE -->
+    <div id="phase-progress-wrapper" class="hidden">
+      <div class="progress-track">
+        <div id="phase-progress-bar" class="progress-fill"></div>
+        <div id="phase-chicken-pin" class="progress-pin">🐔</div>
+      </div>
+    </div>
+
+    <!-- ÁREA DO CANVAS (ONDE O JOGO É DESENHADO) -->
+    <main id="canvas-container">
+      <canvas id="gameCanvas" width="600" height="800"></canvas>
+
+      <!-- Efeito visual de dano / flash vermelho quando atingido -->
+      <div id="damage-overlay"></div>
+    </main>
+
+    <!-- CONTROLES VIRTUAIS PARA CELULAR / TABLET -->
+    <nav id="mobile-controls" class="mobile-dpad">
+      <div class="dpad-row">
+        <button id="btn-up" class="dpad-btn" data-key="ArrowUp" aria-label="Mover para cima">▲</button>
+      </div>
+      <div class="dpad-row middle-row">
+        <button id="btn-left" class="dpad-btn" data-key="ArrowLeft" aria-label="Mover para esquerda">◀</button>
+        <div class="dpad-center">🐔</div>
+        <button id="btn-right" class="dpad-btn" data-key="ArrowRight" aria-label="Mover para direita">▶</button>
+      </div>
+      <div class="dpad-row">
+        <button id="btn-down" class="dpad-btn" data-key="ArrowDown" aria-label="Mover para baixo">▼</button>
+      </div>
+    </nav>
+
+    <!-- ============================================== -->
+    <!-- TELAS E MODAIS DE INTERFACE (SOBREPOSIÇÕES)    -->
+    <!-- ============================================== -->
+
+    <!-- 1. TELA INICIAL (MENU PRINCIPAL) -->
+    <section id="menu-screen" class="game-overlay active">
+      <div class="menu-card glass-panel">
+        <div class="badge-tag">Arcade Divertido</div>
+
+        <h1 class="game-title">
+          <span class="title-chicken">CHICKEN</span>
+          <span class="title-road">ROAD</span>
+        </h1>
+
+        <p class="game-subtitle">Ajude a galinha a atravessar estradas perigosas!</p>
+
+        <!-- Animação da galinha no menu -->
+        <div class="chicken-avatar-container">
+          <div class="avatar-ground"></div>
+          <div class="avatar-chicken-bounce">
+            <div class="chicken-graphic">
+              <div class="comb"></div>
+              <div class="body">
+                <div class="eye"></div>
+                <div class="beak"></div>
+                <div class="wing"></div>
+              </div>
+              <div class="feet">
+                <div class="foot"></div>
+                <div class="foot"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estatísticas do Jogador no Menu -->
+        <div class="menu-stats-bar">
+          <div class="stat-pill">
+            <span class="stat-icon">🪙</span>
+            <span id="menu-total-coins">0</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-icon">🏆</span>
+            <span id="menu-current-level">Fase 1</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-icon">🎯</span>
+            <span id="menu-missions-count">0/5</span>
+          </div>
+        </div>
+
+        <!-- Botões de Ação do Menu -->
+        <div class="menu-buttons">
+          <button id="btn-play" class="btn-primary pulse-anim">
+            <span class="btn-icon">▶️</span> JOGAR
+          </button>
+
+          <button id="btn-select-level" class="btn-secondary">
+            <span class="btn-icon">🗺️</span> Escolher Fase
+          </button>
+
+          <div class="menu-btn-row">
+            <button id="btn-open-missions" class="btn-secondary">
+              <span class="btn-icon">🎯</span> Missões
+              <span id="missions-badge" class="badge-alert hidden">!</span>
+            </button>
+            <button id="btn-open-how-to-play" class="btn-secondary">
+              <span class="btn-icon">❓</span> Como Jogar
+            </button>
+          </div>
+
+          <button id="btn-toggle-sound" class="btn-toggle-sound">
+            <span id="sound-icon">🔊</span> Som: <span id="sound-status">Ligado</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. MODAL SELETOR DE FASES -->
+    <div id="level-select-modal" class="game-modal hidden">
+      <div class="modal-card glass-panel">
+        <div class="modal-header">
+          <h2>🗺️ Selecionar Fase</h2>
+          <button class="btn-close-modal" data-close="level-select-modal">✖</button>
+        </div>
+        <p class="modal-description">Escolha uma das fases desbloqueadas para jogar:</p>
+
+        <div id="levels-grid" class="levels-grid">
+          <!-- Gerado dinamicamente via JavaScript -->
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" data-close="level-select-modal">Voltar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. MODAL DE MISSÕES DIÁRIAS -->
+    <div id="missions-modal" class="game-modal hidden">
+      <div class="modal-card glass-panel wide-modal">
+        <div class="modal-header">
+          <h2>🎯 Missões Diárias</h2>
+          <button class="btn-close-modal" data-close="missions-modal">✖</button>
+        </div>
+
+        <div class="missions-meta-info">
+          <span>Renovam automaticamente a cada 24 horas!</span>
+          <span id="mission-refresh-time" class="time-badge">Hoje</span>
+        </div>
+
+        <div id="missions-list" class="missions-container">
+          <!-- As 5 missões serão inseridas aqui dinamicamente pelo JavaScript -->
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-primary" data-close="missions-modal">Entendi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. MODAL DE COMO JOGAR -->
+    <div id="how-to-play-modal" class="game-modal hidden">
+      <div class="modal-card glass-panel wide-modal">
+        <div class="modal-header">
+          <h2>📖 Como Jogar</h2>
+          <button class="btn-close-modal" data-close="how-to-play-modal">✖</button>
+        </div>
+
+        <div class="instructions-content">
+          <div class="instruct-card">
+            <div class="instruct-icon">🎯</div>
+            <div class="instruct-body">
+              <h3>Objetivo</h3>
+              <p>Guie a galinha pelo trânsito caótico até a linha de chegada no topo da estrada sem ser atropelada!</p>
+            </div>
+          </div>
+
+          <div class="instruct-card">
+            <div class="instruct-icon">🎮</div>
+            <div class="instruct-body">
+              <h3>Controles</h3>
+              <p><strong>Teclado:</strong> Use as teclas <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou as
+                <strong>Setas</strong> para andar.</p>
+              <p><strong>Celular:</strong> Toque nos botões direcionais que aparecem na tela.</p>
+              <p><strong>Pausa:</strong> Aperte <kbd>ESC</kbd> a qualquer momento para pausar.</p>
+            </div>
+          </div>
+
+          <div class="instruct-card">
+            <div class="instruct-icon">❤️</div>
+            <div class="instruct-body">
+              <h3>Vidas e Perigos</h3>
+              <p>Você começa com <strong>3 vidas</strong> em cada fase. Se um carro acertar a galinha, você perde 1 vida
+                e retorna para o início da fase atual. Ao zerar as vidas, é Game Over!</p>
+            </div>
+          </div>
+
+          <div class="instruct-card">
+            <div class="instruct-icon">🪙</div>
+            <div class="instruct-body">
+              <h3>Moedas & Missões</h3>
+              <p>Pegue moedas amarelas espalhadas pelas ruas (+1 moeda cada). Ao concluir a fase, ganhe +10 moedas de
+                bônus! Complete missões diárias para ganhar ainda mais recompensas!</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-primary" data-close="how-to-play-modal">Vamos Jogar!</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. TELA DE PAUSA -->
+    <div id="pause-screen" class="game-overlay hidden">
+      <div class="pause-card glass-panel">
+        <h2>⏸️ Jogo Pausado</h2>
+        <p>Respire fundo e planeje sua travessia!</p>
+
+        <div class="pause-buttons">
+          <button id="btn-resume" class="btn-primary">
+            <span class="btn-icon">▶️</span> Continuar
+          </button>
+          <button id="btn-restart-level" class="btn-secondary">
+            <span class="btn-icon">🔄</span> Reiniciar Fase
+          </button>
+          <button id="btn-pause-menu" class="btn-secondary">
+            <span class="btn-icon">🏠</span> Voltar ao Menu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. TELA DE FASE CONCLUÍDA (VITÓRIA) -->
+    <div id="victory-screen" class="game-overlay hidden">
+      <div class="victory-card glass-panel">
+        <div class="celebration-badge">🎉 VITÓRIA!</div>
+        <h2 id="victory-title">Fase Concluída!</h2>
+        <p class="victory-subtitle">A galinha atravessou com segurança!</p>
+
+        <!-- Sumário de recompensas da fase -->
+        <div class="victory-stats">
+          <div class="vstat-box">
+            <span class="vstat-label">Moedas Coletadas</span>
+            <span id="vstat-coins-picked" class="vstat-number">+0 🪙</span>
+          </div>
+          <div class="vstat-box">
+            <span class="vstat-label">Bônus da Fase</span>
+            <span id="vstat-bonus" class="vstat-number">+10 🪙</span>
+          </div>
+          <div class="vstat-box">
+            <span class="vstat-label">Tempo Gasto</span>
+            <span id="vstat-time" class="vstat-number">00:00 ⏱️</span>
+          </div>
+          <div class="vstat-box highlight">
+            <span class="vstat-label">Total de Moedas</span>
+            <span id="vstat-total-coins" class="vstat-number">0 🪙</span>
+          </div>
+        </div>
+
+        <div class="victory-actions">
+          <button id="btn-next-level" class="btn-primary pulse-anim">
+            <span class="btn-icon">➔</span> Próxima Fase
+          </button>
+          <button id="btn-victory-menu" class="btn-secondary">
+            <span class="btn-icon">🏠</span> Menu Principal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. TELA DE GAME OVER -->
+    <div id="game-over-screen" class="game-overlay hidden">
+      <div class="game-over-card glass-panel">
+        <div class="skull-badge">💥 OH NÃO!</div>
+        <h2>Game Over!</h2>
+        <p class="game-over-msg">A galinha não conseguiu atravessar todas as ruas.</p>
+
+        <div class="game-over-stats">
+          <div class="gstat-box">
+            <span class="gstat-label">Moedas Obtidas</span>
+            <span id="gstat-coins" class="gstat-number">0 🪙</span>
+          </div>
+          <div class="gstat-box">
+            <span class="gstat-label">Fase Alcançada</span>
+            <span id="gstat-level" class="gstat-number">Fase 1</span>
+          </div>
+        </div>
+
+        <div class="game-over-actions">
+          <button id="btn-retry-level" class="btn-primary pulse-anim">
+            <span class="btn-icon">🔄</span> Tentar Novamente
+          </button>
+          <button id="btn-game-over-menu" class="btn-secondary">
+            <span class="btn-icon">🏠</span> Voltar ao Menu
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- Fim de #game-wrapper -->
+
+  <!-- Script do Jogo -->
+  <script src="script.js"></script>
+</body>
+
+</html>
